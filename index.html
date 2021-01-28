@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <link
+      href="https://fonts.googleapis.com/css?family=Amatic+SC:400,700"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <h1>Whack-a-mole! <span class="score">0</span></h1>
+    <button onClick="startGame()">Start!</button>
+    <div class="game">
+      <div class="hole hole1">
+        <div class="mole"></div>
+      </div>
+      <div class="hole hole2">
+        <div class="mole"></div>
+      </div>
+      <div class="hole hole3">
+        <div class="mole"></div>
+      </div>
+      <div class="hole hole4">
+        <div class="mole"></div>
+      </div>
+      <div class="hole hole5">
+        <div class="mole"></div>
+      </div>
+      <div class="hole hole6">
+        <div class="mole"></div>
+      </div>
+    </div>
+
+    <form class="form">
+      <label id="name">Enter your name</label>
+      <textarea for="name" placeholder="name"></textarea>
+      <input type="submit" />
+    </form>
+    <ul class="highscore"></ul>
+
+    <script>
+      const holes = document.querySelectorAll(".hole");
+      const scoreBoard = document.querySelector(".score");
+      const moles = document.querySelectorAll(".mole");
+      const form = document.querySelector(".form");
+      const playerName = form.querySelector("textarea");
+      const scoreList = document.querySelector(".highscore");
+      let leaderBoard = JSON.parse(localStorage.getItem("leaderBoard")) || [];
+      let lastHole;
+      let timeUp = false;
+      let score;
+      function randomTime(min, max) {
+        return Math.round(Math.random() * (max - min) + min);
+      }
+      function randomHole(holes) {
+        const iDx = Math.floor(Math.random() * holes.length);
+        const hole = holes[iDx];
+        if (lastHole === hole) {
+          console.log("ooh no here we go again");
+          return randomHole(holes);
+        }
+
+        lastHole = hole;
+        return hole;
+      }
+      function peep() {
+        const time = randomTime(200, 1000);
+        const hole = randomHole(holes);
+        hole.classList.add("up");
+        setTimeout(() => {
+          hole.classList.remove("up");
+          if (!timeUp) peep();
+        }, time);
+      }
+      function startGame() {
+        scoreBoard.textContent = 0;
+        timeUp = false;
+        score = 0;
+        peep();
+        setTimeout(() => {
+          timeUp = true;
+        }, 10000);
+      }
+      function bonk(e) {
+        if (!e.isTrusted) return;
+
+        score++;
+        this.classList.remove("up");
+        scoreBoard.textContent = score;
+      }
+      function scoreCal(e) {
+        e.preventDefault();
+        var resArray = [];
+        var details = {
+          pName: `${playerName.value}`,
+          pScore: score,
+        };
+        if (leaderBoard.length > 0) {
+          for (i = 1; i <= leaderBoard.length; i++) {
+            var index = 0;
+
+            var idx = parseInt(leaderBoard.length) - i;
+            console.log(idx);
+            console.log(leaderBoard[idx]);
+            const oldScore = leaderBoard[idx].pScore;
+
+            if (score > oldScore) {
+              resArray.push(leaderBoard[idx]);
+
+              index++;
+            } else {
+              break;
+            }
+          }
+          for (i = 0; i < resArray.length; i++) {
+            leaderBoard.pop();
+          }
+          leaderBoard.push(details);
+          for (i = 0; i < resArray.length; i++) {
+            leaderBoard.push(resArray[i]);
+          }
+        } else {
+          leaderBoard.push(details);
+        }
+
+        console.log(leaderBoard);
+        localStorage.setItem("leaderBoard", JSON.stringify(leaderBoard));
+        populateList(leaderBoard, scoreList);
+      }
+      function populateList(board = [], list) {
+        list.innerHTML = board.map(
+          (detail, i) => `
+        <li>${detail.pName} : ${detail.pScore}
+          </li>
+        `
+        );
+      }
+
+      moles.forEach((mole) => mole.addEventListener("click", bonk));
+      form.addEventListener("submit", scoreCal);
+      populateList(leaderBoard, scoreList);
+    </script>
+  </body>
+</html>
